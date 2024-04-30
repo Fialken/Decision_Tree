@@ -9,6 +9,7 @@ t_arvore = 0
 n_arvore = 0
 
 
+
 def entropia(aux_cont, l):
     res = 0
     for i in range(l):
@@ -17,6 +18,7 @@ def entropia(aux_cont, l):
         a = aux_cont[i] / l
         res += (-1 * a * math.log2(a))
     return res
+
 
 def conta_aux1(indices_lines):
     t = len(indices_lines)
@@ -39,3 +41,4 @@ def conta_aux1(indices_lines):
 
     ent = entropia(aux_cont, t)
     return ent
+
