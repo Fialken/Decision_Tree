@@ -3,26 +3,36 @@ import random
 from copy import deepcopy
 
 
-def best_entropy(df):
-    min_entr = math.log2(len(df)) # we want the attribute with min entropy to make a split
-    best = df.columns[0]                      # the max val for entropy will be when all values for attrib i1 are different
-                                   # let c = len(df)
-    for attri in df.columns:      # that means max entropy = -c * 1/c * log2(1/c) = - (-log2(c)) = log2(c)
-        tmp_entr = entropy(df[attri])
-        if tmp_entr < min_entr:
+def best_attribute_split(df,dy):
+    best = df.columns[0]
+    size = dy.size
+    entropy_class = entropy(dy)
+    val_gain = -1
+
+    for attri in df.columns:
+        tmp_val = 0
+
+        for val in df[attri].unique():
+            subset_dy = dy.loc[df[df[attri] == val].index]
+            tmp_val += ((len(subset_dy)/size) * entropy(subset_dy))
+
+        tmp_val = entropy_class - tmp_val
+        if val_gain < tmp_val:
+            val_gain = tmp_val
             best = attri
-            min_entr = tmp_entr
-    return best # return the name of the best attribute < lowest entropy means best :D >
+
+    return best
 
 def entropy(attribute):
-    size = len(attribute)
+    size = attribute.size
     ent_val = 0
     for val in attribute.unique():
         count = 0
         for i in attribute.index:
             if attribute[i] == val:
                 count += 1
-
+        if(count == 0): # only true when val == nan
+            count = attribute.isna().sum()
         p = count/size
         ent_val += (p * math.log2(p))
     return -ent_val
@@ -74,8 +84,8 @@ class DTree:
 
     def create_DTree(self, dx_train, dy_train, curr_node=None):
 
-        # calculate best attribute to split based in entropy and create Nodes
-        best_attrib = best_entropy(dx_train)
+        # calculate best attribute to split based in information gain and create Nodes
+        best_attrib = best_attribute_split(dx_train,dy_train)
         #create a Node for the split
         if curr_node==None: 
             node = Node(best_attrib)
@@ -91,14 +101,18 @@ class DTree:
             sub_set = dfa[dx_train[best_attrib] == val]
 
 
-            if all_classification_equal(sub_set,dy_train): 
+            if len(sub_set) == 0:
+                #create a leaf node with the most common output
+                node.splits[val] = LeafNode(most_common_output(dx_train.index,dy_train),len(dx_train.index),val) #add to 'split' dictionary a leafnode for val
+                self.num_nodes += 1
+
+            elif all_classification_equal(sub_set,dy_train): 
                 #create a leaf node
                 node.splits[val] = LeafNode(dy_train[sub_set.index[0]],len(sub_set.index),val) #add to split dictionary a leafnode for val
                 self.num_nodes += 1
 
-            elif len(sub_set.columns) == 0 or len(sub_set) == 0:
-                #create a leaf node
-                #classifi with the most common output
+            elif len(sub_set.columns) == 0:
+                #create a leaf node with the most common output
                 node.splits[val] = LeafNode(most_common_output(sub_set.index,dy_train),len(sub_set.index),val) #add to 'split' dictionary a leafnode for val
                 self.num_nodes += 1
             
