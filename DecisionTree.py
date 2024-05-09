@@ -1,6 +1,7 @@
 import math
 import random
 from copy import deepcopy
+import pandas as pd
 
 
 def best_attribute_split(df,dy):
@@ -121,6 +122,17 @@ class DTree:
                 node.splits[val] = Node(None,val_ori=val)
                 self.create_DTree(sub_set, dy_train, curr_node=node.splits[val])
                 self.num_nodes += 1
+
+
+    def predict(self,df):
+        pred = []
+        for i in df.index: #each row in df to classify
+            curr_node = self.root
+            while type(curr_node) != LeafNode:
+                curr_node = curr_node.splits[df[curr_node.attribute][i]]
+            pred.append(curr_node.classif)
+
+        return pd.DataFrame({"predictions": pred})
 
 
     def __str__(self):
