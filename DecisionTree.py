@@ -74,6 +74,67 @@ def new_case(curr_node, best_node, max_counter):
     return best_node
 
 
+class Evaluation:
+    def accuracy(df_pred, df_class):
+        assert(len(df_pred) == len(df_class))
+        well_classified = 0
+        i = 0
+        for classif in df_class:
+            if df_pred[i] == classif: 
+                well_classified += 1
+            i += 1
+        print(well_classified/len(df_class))
+
+
+    def confusion_matrix(df_pred, df_class):
+        assert(len(df_pred) == len(df_class))
+        well_classified = {}
+        wrong_classified = {}
+        #create dict for TP | FP
+        for val in list(set(df_pred)):
+            assert(val in list(set(df_pred)))
+            well_classified[val] = 0
+            wrong_classified[val] = 0
+
+        i = 0
+        for classif in df_class:
+            if df_pred[i] == classif: 
+                well_classified[classif] += 1
+            else:
+                wrong_classified[classif] += 1
+            i += 1
+
+        Evaluation.print_matrix(well_classified, wrong_classified)
+    
+    def print_matrix(well_classified:dict, wrong_classified:dict):
+        spaces = []
+
+        res = "Real classification was correctly predicted or wrongly\n"
+        #header
+        res += f"class->"
+        for key in well_classified.keys():
+            res += f" | {key}"
+            spaces.append(len(key))
+        
+        #correctly classified
+        res += " |\ncorrect"
+        i = 0
+        for val in well_classified.values():
+            space = " "*int((spaces[i]-len(str(val)))/2)
+            res += f" | {space}{val}{space}" if ((spaces[i]-len(str(val))) % 2 == 0) else f" | {space}{val}{space} "
+            i += 1
+        
+        #wrongly classified
+        res += " |\nwrong  "
+        i = 0
+        for val in wrong_classified.values():
+            space = " "*int((spaces[i]-len(str(val)))/2)
+            res += f" | {space}{val}{space}" if ((spaces[i]-len(str(val))) % 2 == 0) else f" | {space}{val}{space} "
+            i += 1
+        res += " |\n"
+        print(res)
+
+
 
 class LeafNode:
 
@@ -151,17 +212,6 @@ class DTree:
             pred.append(curr_node.classif)
             
         return pred
-
-
-    def accuracy(self,df_pred, df_class):
-        assert(len(df_pred) == len(df_class))
-        well_classified = 0
-        i = 0
-        for classif in df_class:
-            if df_pred[i] == classif: 
-                well_classified += 1
-            i += 1
-        return well_classified / len(df_class)
 
 
     def __str__(self):
