@@ -1,14 +1,13 @@
 import math
 import random
 from copy import deepcopy
-import pandas as pd
 
 
 def best_attribute_split(df,dy):
     best = df.columns[0]
     size = dy.size
     entropy_class = entropy(dy)
-    val_gain = -1
+    val_gain = float('-inf')
 
     for attri in df.columns:
         tmp_val = 0
@@ -57,6 +56,22 @@ def most_common_output(indices,setY):
     keys_with_max_value = [key for key, value in outputs.items() if value == max_value]
 
     return random.choice(keys_with_max_value)
+
+def new_case(curr_node, best_node, max_counter):
+    '''
+    this funcion is called when a new case is seen at DT.predict()
+    in that case we will choose the classification that occurs the most in subtree from the current node
+    '''
+    if type(curr_node) == LeafNode:  # If the node is a leaf
+        return curr_node
+    
+    for node in curr_node.splits.values():
+        leaf_node = new_case(node, best_node, max_counter)
+        if leaf_node.counter > max_counter:
+            best_node = leaf_node
+            max_counter = leaf_node.counter
+            
+    return best_node
 
 
 
@@ -129,10 +144,24 @@ class DTree:
         for i in df.index: #each row in df to classify
             curr_node = self.root
             while type(curr_node) != LeafNode:
-                curr_node = curr_node.splits[df[curr_node.attribute][i]]
+                try:
+                    curr_node = curr_node.splits[df[curr_node.attribute][i]]
+                except:
+                    curr_node = new_case(curr_node,None, float("-inf"))
             pred.append(curr_node.classif)
+            
+        return pred
 
-        return pd.DataFrame({"predictions": pred})
+
+    def accuracy(self,df_pred, df_class):
+        assert(len(df_pred) == len(df_class))
+        well_classified = 0
+        i = 0
+        for classif in df_class:
+            if df_pred[i] == classif: 
+                well_classified += 1
+            i += 1
+        return well_classified / len(df_class)
 
 
     def __str__(self):
