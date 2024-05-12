@@ -174,9 +174,8 @@ class DTree:
         dfa = deepcopy(dx_train)
         dfa.drop(columns=best_attrib,inplace=True)
 
-        for val in dx_train[best_attrib].unique(): #analise if when the best attribute as the value = val it classifies every case with the same type
+        for val in dx_train[best_attrib].unique():
             sub_set = dfa[dx_train[best_attrib] == val]
-
 
             if len(sub_set) == 0:
                 #create a leaf node with the most common output
@@ -185,7 +184,7 @@ class DTree:
 
             elif all_classification_equal(sub_set,dy_train): 
                 #create a leaf node
-                node.splits[val] = LeafNode(dy_train[sub_set.index[0]],len(sub_set.index),val) #add to split dictionary a leafnode for val
+                node.splits[val] = LeafNode(dy_train[sub_set.index[0]],len(sub_set.index),val) #add to 'split' dictionary a leafnode for val
                 self.num_nodes += 1
 
             elif len(sub_set.columns) == 0:
@@ -208,6 +207,8 @@ class DTree:
                 try:
                     curr_node = curr_node.splits[df[curr_node.attribute][i]]
                 except:
+                    #used when a new case is seen and there is no specific branch for it
+                    #in that case we will choose the classification that occurs the most in subtree from the current node
                     curr_node = new_case(curr_node,None, float("-inf"))
             pred.append(curr_node.classif)
             
