@@ -91,7 +91,7 @@ class Evaluation:
         well_classified = {}
         wrong_classified = {}
         #create dict for TP | FP
-        for val in list(set(df_pred)):
+        for val in list(set(df_class)):
             assert(val in list(set(df_pred)))
             well_classified[val] = 0
             wrong_classified[val] = 0
