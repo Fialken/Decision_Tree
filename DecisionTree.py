@@ -1,6 +1,10 @@
 import math
 import random
 from copy import deepcopy
+import pandas as pd
+from sklearn.preprocessing import KBinsDiscretizer
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 
 def best_attribute_split(df,dy):
@@ -83,7 +87,7 @@ class Evaluation:
             if df_pred[i] == classif: 
                 well_classified += 1
             i += 1
-        print(well_classified/len(df_class))
+        print(f"Accuracy: {well_classified/len(df_class)}")
 
 
     def confusion_matrix(df_pred, df_class):
@@ -157,6 +161,43 @@ class DTree:
     def __init__(self):
         self.root = None
         self.num_nodes = 0
+
+
+    def start_algorithm(self,dfx:pd, divide_df = False):
+        #df will be the attributes and dfy the classification
+        dfy = dfx.iloc[:, -1]
+        dfx.drop(columns=dfy.name ,inplace=True)
+
+        '''process data based on it's category'''
+        est = KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
+
+        for col in dfx.columns:
+            #if all values are diffent we don't need that column
+            if len(dfx) == len(dfx[col].unique()):
+                dfx.drop(columns=col ,inplace=True)
+                continue
+
+            #
+            elif len(dfx[col].unique())/len(dfx) > 0.13 and (np.issubdtype(dfx[col].dtype, np.integer) or np.issubdtype(dfx[col].dtype, np.float64)):
+                dfx[col] = pd.DataFrame(est.fit_transform(dfx[col].to_frame()),columns=[col])
+
+            elif type(dfx[col].dtype) == str:
+                for i in dfx[col].index:
+                    if not pd.isna(dfx[col][i]):
+                        dfx[col][i] = dfx[col][i].lower()
+        
+
+        #70/30 to train
+        if divide_df:
+            X_train, X_test, y_train, y_test = train_test_split(dfx, dfy, test_size=0.3)
+            self.create_DTree(X_train,y_train)
+            pred = self.predict(X_test)
+            Evaluation.accuracy(pred,y_test)
+            print()
+            Evaluation.confusion_matrix(pred,y_test)
+
+        else :
+            self.create_DTree(dfx,dfy)
 
 
     def create_DTree(self, dx_train, dy_train, curr_node=None):
