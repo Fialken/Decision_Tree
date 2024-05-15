@@ -175,7 +175,6 @@ class DTree:
             #if all values are diffent we don't need that column
             if len(dfx) == len(dfx[col].unique()):
                 dfx.drop(columns=col ,inplace=True)
-                continue
 
             #
             elif len(dfx[col].unique())/len(dfx) > 0.13 and (np.issubdtype(dfx[col].dtype, np.integer) or np.issubdtype(dfx[col].dtype, np.float64)):
