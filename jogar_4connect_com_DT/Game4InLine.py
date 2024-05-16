@@ -1,19 +1,23 @@
 from copy import deepcopy
 import joblib
+import pandas as pd
+import random
 
 #Human start and uses 'X' (player 1)
 #AI go second and uses 'O' (player 2)
 
 class Game4InLine:
+
     def __init__ (self,row,col):
         '''
         initialize the game, board and all other components to be able to play
         '''
+        self.decision_tree = joblib.load('arvore_4connected.pkl') # arvore de decisao criada pelo algoritmo
         self.rows = row
         self.cols = col
-        self.board = [['-' for _ in range(col)] for _ in range(row)] #matrix representing the board, initialized full with '-'
+        self.board = [['b' for _ in range(col)] for _ in range(row)] #matrix representing the board, initialized full with '-'
         self.placed = [0 for _ in range(col)] #store the num of pieces per column, initialized with 0s
-        self.pieces = ['X','O'] # different pieces
+        self.pieces = ['x','o'] # different pieces
         self.turn = 0 # to know next player, switch between 0 and 1
         self.round = 0 
 
@@ -177,9 +181,9 @@ class Game4InLine:
             count_X=0
             count_O=0
             for j in range(4):
-                if (game.board[row][tpmcol+j] == "X"):
+                if (game.board[row][tpmcol+j] == "x"):
                     count_X+=1
-                if (game.board[row][tpmcol+j] == "O"):
+                if (game.board[row][tpmcol+j] == "o"):
                     count_O+=1
             
             #dar pontos
@@ -195,9 +199,9 @@ class Game4InLine:
         count_X=0
         count_O=0
         for i in range(0,min(4,game.rows-row)):
-            if (game.board[row+i][col] == "X"):
+            if (game.board[row+i][col] == "x"):
                 count_X+=1
-            if (game.board[row+i][col] == "O"):
+            if (game.board[row+i][col] == "o"):
                 count_O+=1
 
         #dar pontos
@@ -222,9 +226,9 @@ class Game4InLine:
             count_X=0
             count_O=0
             for h in range(4):
-                if (game.board[tmprow+h][tmpcol+h] == "X"):
+                if (game.board[tmprow+h][tmpcol+h] == "x"):
                     count_X+=1
-                if (game.board[tmprow+h][tmpcol+h] == "O"):
+                if (game.board[tmprow+h][tmpcol+h] == "o"):
                     count_O+=1
 
             h_value = getPoints_extra(game,count_X,count_O)
@@ -251,9 +255,9 @@ class Game4InLine:
             count_X=0
             count_O=0
             for h in range(4):
-                if (game.board[tmprow-h][tmpcol+h] == "X"):
+                if (game.board[tmprow-h][tmpcol+h] == "x"):
                     count_X+=1
-                if (game.board[tmprow-h][tmpcol+h] == "O"):
+                if (game.board[tmprow-h][tmpcol+h] == "o"):
                     count_O+=1
 
             h_value = getPoints_extra(game,count_X,count_O)
@@ -286,16 +290,16 @@ class Game4InLine:
         and depending on whose turn is to play (+16 for X, -16 for O)
         '''
 
-        points = 16 if game.pieces[game.turn] == 'X' else -16
+        points = 16 if game.pieces[game.turn] == 'x' else -16
         #horizontal
         for i in range(game.rows):
             for j in range(game.cols-3):
                 count_X=0
                 count_O=0
                 for h in range(j,j+4):
-                    if (game.board[i][h] == "X"):
+                    if (game.board[i][h] == "x"):
                         count_X+=1
-                    if (game.board[i][h] == "O"):
+                    if (game.board[i][h] == "o"):
                         count_O+=1
 
                 h_value = getPoints(count_X,count_O)
@@ -310,9 +314,9 @@ class Game4InLine:
                 count_X=0
                 count_O=0                
                 for h in range(j,j+4):
-                    if (game.board[h][i] == "X"):
+                    if (game.board[h][i] == "x"):
                         count_X+=1
-                    if (game.board[h][i] == "O"):
+                    if (game.board[h][i] == "o"):
                         count_O+=1
 
                 h_value = getPoints(count_X,count_O)
@@ -327,9 +331,9 @@ class Game4InLine:
                 count_X=0
                 count_O=0  
                 for h in range(4):
-                    if (game.board[i+h][j+h] == "X"):
+                    if (game.board[i+h][j+h] == "x"):
                         count_X+=1
-                    if (game.board[i+h][j+h] == "O"):
+                    if (game.board[i+h][j+h] == "o"):
                         count_O+=1
 
                 h_value = getPoints(count_X,count_O)
@@ -344,9 +348,9 @@ class Game4InLine:
                 count_X=0
                 count_O=0  
                 for h in range(4):
-                    if (game.board[i+h][j-h] == "X"):
+                    if (game.board[i+h][j-h] == "x"):
                         count_X+=1
-                    if (game.board[i+h][j-h] == "O"):
+                    if (game.board[i+h][j-h] == "o"):
                         count_O+=1
 
                 h_value = getPoints(count_X,count_O)
@@ -358,31 +362,53 @@ class Game4InLine:
         return points
 
 
-    def A_star(self,heuristic):
+    def A_star(self,dt):
         '''
         As in this project our A* only looks for its next best play without going in depht for a possible move from its the oponent we don't need to do a loop until the game is finished
         We will use a list to store [heuristic(child),col] and sort it so the best play for 'O' is first and for 'X' is last
         A* will play as 'O' when vs human, so the lower the score the best (due to our heuristic setup)
         it returns the col from best child based on the turn
         '''
+        heuristic = lambda state,col: Game4InLine.heuristic_points(state,col)+ Game4InLine.heuristic_extra(state,col)
         childs=self.childs()
         points_col=[]  #points_col[k][0] = points | points_col[k][1] = col
-        points_given=[] #list to visualise the given points per heuristic and the column played. format-> list of lists = [[h_points,h_extra,col]]
+        #points_given=[] #list to visualise the given points per heuristic and the column played. format-> list of lists = [[h_points,h_extra,col]]
+        #DT stuff
+        wins = []
+        draws = []
         for i in range(len(childs)):
             col=childs[i][1]
-            points_col.append([heuristic(state=(childs[i][0]),col=col),col])
-            #para visualizar pontuacao de cada heuristica
-            points_given.append([Game4InLine.heuristic_points((childs[i][0]),col),Game4InLine.heuristic_extra((childs[i][0]),col),col+1])
+            if dt == 0:
+                points_col.append([heuristic(state=(childs[i][0]),col=col),col])
+                #para visualizar pontuacao de cada heuristica
+                #points_given.append([Game4InLine.heuristic_points((childs[i][0]),col),Game4InLine.heuristic_extra((childs[i][0]),col),col+1])
 
-        points_col.sort() #order the list so that first is the lowest points in total and last the max points. !!*this doesn't mean the best play is last*!!
+            if dt == 1:
+                list_board = [item for sublist in self.board for item in sublist]
+                df = pd.DataFrame([list_board])
+                df.columns = range(42)
+                res = self.decision_tree.predict(df)[0]
+                if res == "win":
+                    wins.append(col)
+                elif res == "draw":
+                    draws.append(col)
+        
+        if dt == 0:
+            points_col.sort() #order the list so that first is the lowest points in total and last the max points. !!*this doesn't mean the best play is last*!!
+            return (points_col[0][1]) if self.pieces[self.turn] == 'o' else (points_col[-1][1])
+        
+        elif dt == 1:
+            if len(wins) != 0:
+                print(f"wining cols: {wins}")
+                return random.choice(wins)
+            elif len(draws) != 0:
+                print(f"drawing cols: {draws}")
+                return random.choice(draws)
+            else:
+                print(f"only loses")
+                return random.choice(self.legal_moves())
 
-        #para visualizar pontuacao de cada heuristica
-        print(f"h_dada, h_extra, col:")
-        for j in range(len(points_given)):
-            print(points_given[j])
-        #para visualizar pontuacao de cada heuristica
 
-        return (points_col[0][1]) if self.pieces[self.turn] == 'O' else (points_col[-1][1])
 
 
     def __str__(self): #override the print() method
@@ -416,13 +442,13 @@ def getPoints_extra(game: Game4InLine, x, o):
     '''
     returns the points based on the extra heuristic setup
     '''
-    if(x==3 and o==1) and game.pieces[game.turn-1] == 'O':
+    if(x==3 and o==1) and game.pieces[game.turn-1] == 'o':
         return -500
-    if(x==2 and o==1) and game.pieces[game.turn-1] == 'O':
+    if(x==2 and o==1) and game.pieces[game.turn-1] == 'o':
         return -100  
-    if(x==1 and o==3) and game.pieces[game.turn-1] == 'X':
+    if(x==1 and o==3) and game.pieces[game.turn-1] == 'x':
         return 500
-    if(x==1 and o==2) and game.pieces[game.turn-1] == 'X':
+    if(x==1 and o==2) and game.pieces[game.turn-1] == 'x':
         return 100 
     return 0
 
@@ -435,6 +461,7 @@ def print_board(board): #transform the game board from matrix to a visual repres
         board_str += "| "
         for j in range(len(board[i])):
             #board_str+=board[i][j]
-            board_str += f"{board[i][j]} | "
+            peca = "-" if board[i][j] == "b" else board[i][j]
+            board_str += f"{peca} | "
         board_str+="\n"
     return board_str
