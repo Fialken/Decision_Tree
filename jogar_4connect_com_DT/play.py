@@ -5,6 +5,9 @@ from MCTS import MCTS
 BOARD_SIZE_STANDARD = True #make it 'False' if u want to play 4InLine with a board diff from 6x7
 TIME_MCTS = 5 #time for search with mcts
 
+
+
+
 def result(game,col):
     ''' 
     funcao para analisar quando o jogo acabar se foi empate ou qual jogador ganhou
@@ -127,6 +130,18 @@ def A_star_vs_MCTS(i):
             break
 
     print(f"game took {(time.time()-start_time):.0f} seg and {game.round} rounds")
+
+
+def gerar_7():
+    game=G4Line(6,7)
+    for i in range(7):
+        tree = MCTS(game)
+        tree.search(TIME_MCTS) 
+        column_played = tree.best_move()
+        game.play(column_played)
+    print(game)
+
+
 
 
 if __name__ == "__main__":

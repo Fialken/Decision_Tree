@@ -415,7 +415,7 @@ class Game4InLine:
         draws = []
         loses = []
         for i in range(len(childs)):
-            col=childs[i][1]
+            col=childs[i][1] + 1
             list_board = [item for sublist in self.board for item in sublist]
             df = pd.DataFrame([list_board])
             df.columns = range(42)
