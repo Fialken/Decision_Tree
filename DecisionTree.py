@@ -155,44 +155,15 @@ class Node:
         self.origin_value = val_ori
         self.splits = {}
 
-
+   
 class DTree:
     def __init__(self):
         self.root = None
         self.num_nodes = 0
 
 
-    def process_data(dfx):
-        dfy = dfx.iloc[:, -1]
-        dfx.drop(columns=dfy.name ,inplace=True)
-
-        '''process data based on it's category'''
-        est = KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
-
-        for col in dfx.columns:
-            #if all values are diffent we don't need that column
-            if len(dfx) == len(dfx[col].unique()):
-                dfx.drop(columns=col ,inplace=True)
-            
-            elif len(dfx[col].unique())/len(dfx) > 0.10 and (np.issubdtype(dfx[col].dtype, np.integer) or np.issubdtype(dfx[col].dtype, np.float64)):
-                dfx[col] = pd.DataFrame(est.fit_transform(dfx[col].to_frame()),columns=[col])
-
-            elif type(dfx[col].dtype) == str:
-                for i in dfx[col].index:
-                    if not pd.isna(dfx[col][i]):
-                        dfx[col][i] = dfx[col][i].lower()
-        
-        return dfx,dfy
-    
-    
-class DTree:
-    def __init__(self):
-        self.root = None
-        self.num_nodes = 0
-
-
-    def process_data(dfx, treino = False):
-        if treino:
+    def process_data(dfx, new_examples = False):
+        if not new_examples:
             dfy = dfx.iloc[:, -1]
             dfx.drop(columns=dfy.name ,inplace=True)
 
@@ -212,10 +183,9 @@ class DTree:
                     if not pd.isna(dfx[col][i]):
                         dfx[col][i] = dfx[col][i].lower()
         
-        if treino:
-            return dfx,dfy    
-        else: return dfx
-    
+        if new_examples: return dfx    
+        else: return dfx, dfy
+
 
     def start_algorithm(self,dfx:pd ,dfy ,split_test_train):
         #70/30 to train
@@ -263,7 +233,7 @@ class DTree:
                 #create a leaf node with the most common output
                 node.splits[val] = LeafNode(most_common_output(sub_set.index,dy_train),len(sub_set.index),val) #add to 'split' dictionary a leafnode for val
                 self.num_nodes += 1
-            
+
             else:
                 #need to split again
                 node.splits[val] = Node(None)
@@ -289,7 +259,6 @@ class DTree:
 
     def __str__(self):
         return print_tree(self.root,0)
-
 
 
 def print_tree(node,depth):

@@ -427,7 +427,7 @@ class Game4InLine:
             else:
                 loses.append(col)
 
-        print(f"Colunas que originam \"wins\": {wins}\nColunas que originam \"draws\": {draws}\n Colunas que originam \"loses\": {loses}")
+        print(f"Colunas que originam \"wins\": {wins}\nColunas que originam \"draws\": {draws}\nColunas que originam \"loses\": {loses}")
 
 
     def __str__(self): #override the print() method
